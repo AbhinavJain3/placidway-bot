@@ -1,0 +1,12 @@
+fastapi==0.115.*
+uvicorn[standard]==0.32.*
+pydantic==2.*
+pydantic-settings==2.*
+email-validator==2.*
+httpx==0.28.*
+beautifulsoup4==4.12.*
+lxml==5.*
+rank-bm25==0.2.2
+fastembed==0.4.*
+numpy<2.2
+openai>=1.55,<3

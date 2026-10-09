@@ -1,0 +1,15 @@
+# Weekly content refresh: asks the live bot to re-crawl its 7 source pages.
+# Set repository secrets BOT_URL (e.g. https://placidway-kb-chatbot.onrender.com) and ADMIN_TOKEN.
+name: Refresh knowledge base
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger refresh
+        run: |
+          curl --fail-with-body -sS --max-time 300 -X POST "${{ secrets.BOT_URL }}/api/admin/refresh" \
+            -H "X-Admin-Token: ${{ secrets.ADMIN_TOKEN }}" | head -c 2000

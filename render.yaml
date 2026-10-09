@@ -1,0 +1,22 @@
+# Render Blueprint: New > Blueprint > pick this repo. Secrets marked sync:false are entered in the dashboard.
+services:
+  - type: web
+    name: placidway-kb-chatbot
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: LLM_PROVIDER
+        value: openai
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CHAT_MODEL
+        value: gpt-5.6-luna
+      - key: CHAT_REASONING_EFFORT
+        value: low
+      - key: REWRITE_MODEL
+        value: gpt-4o
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: CRAWLER_CONTACT
+        sync: false

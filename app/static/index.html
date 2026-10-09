@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PlacidWay Assistant</title>
+<meta name="description" content="Ask questions about ITC Tijuana alternative cancer treatment packages, prices and alternative medicine costs abroad.">
+<style>
+  :root {
+    --bg: #f4f6f8; --panel: #ffffff; --text: #1d2733; --muted: #5f6b7a; --border: #dde3ea;
+    --brand: #0b6e8a; --brand-ink: #ffffff; --user: #0b6e8a; --user-ink: #ffffff; --bot: #eef3f6;
+    --chip: #e3f1f5; --chip-ink: #0a5870; --warn: #8a5a00; --warn-bg: #fff6e0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11161c; --panel: #171e26; --text: #e4e9ef; --muted: #9aa6b4; --border: #2a3542;
+      --brand: #37a6c4; --brand-ink: #071318; --user: #2d7f97; --user-ink: #ffffff; --bot: #1f2933;
+      --chip: #193744; --chip-ink: #9fd8e8; --warn: #f3c46b; --warn-bg: #2d2412;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .app { max-width: 820px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; padding: 0 16px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+  header h1 { font-size: 17px; margin: 0; }
+  header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+  .btn { border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 8px; padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+  .btn.primary { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  #log { flex: 1; overflow-y: auto; padding: 18px 0; display: flex; flex-direction: column; gap: 14px; }
+  .msg { max-width: 88%; padding: 10px 14px; border-radius: 14px; word-wrap: break-word; }
+  .msg.user { align-self: flex-end; background: var(--user); color: var(--user-ink); border-bottom-right-radius: 4px; white-space: pre-wrap; }
+  .msg.bot { align-self: flex-start; background: var(--bot); border-bottom-left-radius: 4px; }
+  .msg.bot p { margin: 0 0 8px; } .msg.bot p:last-child { margin-bottom: 0; }
+  .msg.bot ul { margin: 4px 0 8px; padding-left: 20px; }
+  .msg.bot sup a { color: var(--brand); text-decoration: none; font-weight: 600; }
+  .sources { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .sources a { background: var(--chip); color: var(--chip-ink); font-size: 12.5px; border-radius: 999px; padding: 3px 10px; text-decoration: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sources a:hover { text-decoration: underline; }
+  .cta { margin-top: 10px; }
+  .typing { color: var(--muted); font-style: italic; }
+  .suggestions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .suggestions button { font-size: 13px; }
+  form#ask { display: flex; gap: 8px; padding: 12px 0 16px; border-top: 1px solid var(--border); }
+  #q { flex: 1; min-width: 0; border: 1px solid var(--border); background: var(--panel); color: var(--text); border-radius: 10px; padding: 10px 12px; font: inherit; }
+  .lead { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; display: grid; gap: 8px; max-width: 420px; align-self: flex-start; }
+  .lead h3 { margin: 0; font-size: 15px; }
+  .lead input, .lead textarea { width: 100%; border: 1px solid var(--border); background: var(--bg); color: var(--text); border-radius: 8px; padding: 8px 10px; font: inherit; }
+  .lead small { color: var(--muted); }
+  .note { font-size: 12px; color: var(--muted); text-align: center; padding-bottom: 8px; }
+  .err { color: var(--warn); background: var(--warn-bg); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>PlacidWay Assistant</h1>
+      <p>Answers only from PlacidWay pages about ITC Tijuana and alternative medicine costs abroad.</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" id="quoteBtn" type="button">Free quote</button>
+      <button class="btn" id="newBtn" type="button">New chat</button>
+    </div>
+  </header>
+
+  <div id="log" aria-live="polite"></div>
+
+  <form id="ask" autocomplete="off">
+    <input id="q" maxlength="1000" placeholder="Ask about treatments, packages, prices…" aria-label="Your question">
+    <button class="btn primary" id="send" type="submit">Send</button>
+  </form>
+  <div class="note">Information only, not medical advice. Prices are estimates from PlacidWay pages; confirm with the provider.</div>
+</div>
+
+<script>
+(() => {
+  const log = document.getElementById("log");
+  const form = document.getElementById("ask");
+  const input = document.getElementById("q");
+  const send = document.getElementById("send");
+  const SUGGESTIONS = [
+    "How much does alternative adrenal cancer treatment cost in Mexico?",
+    "What is included in the anal cancer treatment package?",
+    "Is alternative medicine cheaper in Turkey or Mexico?",
+    "¿Cuánto cuesta el programa de hospitalización en ITC?",
+  ];
+
+  const newId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2)).replace(/[^A-Za-z0-9-]/g, "");
+  let sessionId;
+  try { sessionId = sessionStorage.getItem("pw_session") || newId(); sessionStorage.setItem("pw_session", sessionId); }
+  catch { sessionId = newId(); }
+
+  const esc = s => s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  // Minimal, safe markdown: escape first, then bold, bullet lists, paragraphs and [n] citation links.
+  function render(md, sources) {
+    const lines = esc(md).split(/\n/);
+    let html = "", inList = false;
+    for (const raw of lines) {
+      const line = raw.trim();
+      const item = line.match(/^[-*•]\s+(.*)/) || line.match(/^\d+\.\s+(.*)/);
+      if (item) { if (!inList) { html += "<ul>"; inList = true; } html += `<li>${item[1]}</li>`; continue; }
+      if (inList) { html += "</ul>"; inList = false; }
+      if (line) html += `<p>${line}</p>`;
+    }
+    if (inList) html += "</ul>";
+    html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*/g, "$1<em>$2</em>");
+    return html.replace(/\[(\d+)\]/g, (m, n) => {
+      const s = sources[Number(n) - 1];
+      return s ? `<sup><a href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.title)}">[${n}]</a></sup>` : "";
+    });
+  }
+
+  function add(role, html, cls = "") {
+    const div = document.createElement("div");
+    div.className = `msg ${role} ${cls}`.trim();
+    div.innerHTML = html;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    return div;
+  }
+
+  function welcome() {
+    log.innerHTML = "";
+    add("bot", "<p>Hi! I can answer questions about <strong>ITC Immunity Therapy Center</strong> in Tijuana, its alternative cancer treatment packages and prices, and alternative medicine costs abroad, using PlacidWay's pages. Every answer links to its source.</p>");
+    const box = document.createElement("div");
+    box.className = "suggestions";
+    for (const s of SUGGESTIONS) {
+      const b = document.createElement("button");
+      b.className = "btn"; b.type = "button"; b.textContent = s;
+      b.onclick = () => { box.remove(); ask(s); };
+      box.appendChild(b);
+    }
+    log.appendChild(box);
+  }
+
+  function leadForm(prefill = "") {
+    if (document.querySelector(".lead")) { document.querySelector(".lead input").focus(); return; }
+    const f = document.createElement("form");
+    f.className = "lead";
+    f.innerHTML = `
+      <h3>Request a free quote</h3>
+      <small>PlacidWay's patient team will reply by email with personalised pricing.</small>
+      <input name="name" placeholder="Your name" required maxlength="120">
+      <input name="email" type="email" placeholder="Email" required maxlength="200">
+      <input name="treatment" placeholder="Treatment of interest (optional)" maxlength="200" value="${esc(prefill)}">
+      <textarea name="message" rows="2" placeholder="Anything else? (optional)" maxlength="1000"></textarea>
+      <div style="display:flex;gap:8px"><button class="btn primary" type="submit">Send request</button><button class="btn" type="button" data-cancel>Cancel</button></div>`;
+    f.querySelector("[data-cancel]").onclick = () => f.remove();
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(f));
+      const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
+      try {
+        const r = await fetch("/api/lead", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, ...data }) });
+        if (!r.ok) throw new Error((await r.json()).detail?.[0]?.msg || "Please check your details.");
+        f.remove();
+        add("bot", `<p>Thank you, ${esc(data.name)}! Your request was received. PlacidWay's team will contact you at <strong>${esc(data.email)}</strong>.</p>`);
+      } catch (err) {
+        btn.disabled = false;
+        let m = f.querySelector(".err"); if (!m) { m = document.createElement("small"); m.className = "err"; f.appendChild(m); }
+        m.textContent = err.message;
+      }
+    };
+    log.appendChild(f);
+    log.scrollTop = log.scrollHeight;
+    f.querySelector("input").focus();
+  }
+
+  async function ask(text) {
+    add("user", esc(text));
+    const typing = add("bot", "Searching PlacidWay pages…", "typing");
+    input.value = ""; send.disabled = true;
+    try {
+      const r = await fetch("/api/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId, message: text }) });
+      if (!r.ok) throw new Error(r.status === 422 ? "Please enter a shorter question." : r.status === 429 ? "You're sending messages quickly. Please wait a minute and try again." : "The assistant is unavailable right now.");
+      const d = await r.json();
+      typing.remove();
+      let html = render(d.answer, d.sources);
+      if (d.sources.length) {
+        html += `<div class="sources">` + d.sources.map((s, i) => `<a href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.url)}">[${i + 1}] ${esc(s.title)}</a>`).join("") + `</div>`;
+      }
+      const msg = add("bot", html);
+      if (d.offer_quote && !d.show_lead_form) {
+        const b = document.createElement("button");
+        b.className = "btn cta"; b.type = "button"; b.textContent = "Request a free quote";
+        b.onclick = () => leadForm();
+        msg.appendChild(b);
+      }
+      if (d.show_lead_form) leadForm();
+    } catch (err) {
+      typing.remove();
+      add("bot", esc(err.message), "err");
+    } finally {
+      send.disabled = false; input.focus();
+    }
+  }
+
+  form.onsubmit = (e) => { e.preventDefault(); const t = input.value.trim(); if (t) ask(t); };
+  document.getElementById("quoteBtn").onclick = () => leadForm();
+  document.getElementById("newBtn").onclick = async () => {
+    fetch("/api/chat/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId }) }).catch(() => {});
+    sessionId = newId(); try { sessionStorage.setItem("pw_session", sessionId); } catch {}
+    welcome();
+  };
+  welcome();
+  input.focus();
+})();
+</script>
+</body>
+</html>
