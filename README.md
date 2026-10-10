@@ -4,7 +4,7 @@ A small, grounded chatbot that answers patient questions **only** from 7 PlacidW
 Center in Tijuana, its treatment packages, price list and videos, plus the alternative-medicine cost comparison
 page). Every answer cites its source URL. When the answer is not on the pages, the bot says so and offers a free quote.
 
-- **Live demo:** `<RENDER_URL>`
+- **Live demo:** https://placidway-kb-chatbot.onrender.com (free tier: the first request after idling can take ~30–50 s while the instance wakes up)
 - **Test results:** [`docs/test_results.md`](docs/test_results.md) (the 8 required questions + 7 extra edge cases); UI screenshot in [`docs/screenshots/`](docs/screenshots/)
 - **Write-up (improvements & limitations):** [`docs/WRITEUP.md`](docs/WRITEUP.md)
 
